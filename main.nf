@@ -9,7 +9,7 @@ process featurecounts {
     tuple val(pair_id), path(fastq)
 
   when:
-    ( ! file("/workdir/featureCounts_output_kal/${pair_id}_biotype_counts_mqc.txt").exists() ) 
+    ( ! file("/workdir/featureCounts_output/${pair_id}_biotype_counts_mqc.txt").exists() ) 
   
   script:
   def single = fastq instanceof Path
