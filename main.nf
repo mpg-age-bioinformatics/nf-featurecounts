@@ -33,8 +33,8 @@ process featurecounts {
     if [[ "${bam}" == "None" ]] ; then bam=\$(ls *.bam | head -n 1 ) ; else bam=${bam} ; fi
     featureCounts -a ${gtf} -T ${task.cpus} -g gene_id -o /workdir/featureCounts_output/${pair_id}_gene.featureCounts.txt ${paired} -s \${strand} \${bam}
     featureCounts -a ${gtf} -T ${task.cpus} -g gene_biotype -o /workdir/featureCounts_output/${pair_id}_biotype.featureCounts.txt ${paired} -s \${strand} \${bam}
-    cp biotypes_header.txt ${pair_id}_biotype_counts_mqc.txt
-    cut -f 1,7 /workdir/featureCounts_output/${pair_id}_biotype.featureCounts.txt | tail -n +3 | grep -v '^\\s' >> ${pair_id}_biotype_counts_mqc.txt
+    cp /workdir/featureCounts_output/biotypes_header.txt /workdir/featureCounts_output/${pair_id}_biotype_counts_mqc.txt
+    cut -f 1,7 /workdir/featureCounts_output/${pair_id}_biotype.featureCounts.txt | tail -n +3 | grep -v '^\\s' >> /workdir/featureCounts_output/${pair_id}_biotype_counts_mqc.txt
   """
 }
 
@@ -126,6 +126,7 @@ workflow {
 #     title: "featureCounts: Biotypes"\n\
 #     xlab: "# Reads"\n\
 #     cpswitch_counts_label: "Number of Reads\n"""
+  file.text = headers
 
   featurecounts(mapping_output, gtf, bam, strand_file, read_files)
   if ( bam != "None" ) {
