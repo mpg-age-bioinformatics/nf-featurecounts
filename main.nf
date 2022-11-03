@@ -33,7 +33,7 @@ process featurecounts {
     if [[ "${bam}" == "None" ]] ; then bam=\$(ls *.bam | head -n 1 ) ; else bam=${bam} ; fi
     featureCounts -a ${gtf} -T ${task.cpus} -g gene_id -o /workdir/featureCounts_output/${pair_id}_gene.featureCounts.txt ${paired} -s \${strand} \${bam}
     featureCounts -a ${gtf} -T ${task.cpus} -g gene_biotype -o /workdir/featureCounts_output/${pair_id}_biotype.featureCounts.txt ${paired} -s \${strand} \${bam}
-    cut -f 1,7 /workdir/featureCounts_output/${pair_id}_biotype.featureCounts.txt | tail -n +3 | grep -v '^\\s'  > /workdir/featureCounts_output/${pair_id}_biotype_counts_mqc.tmp.txt
+    cut -f 1,7 /workdir/featureCounts_output/${pair_id}_biotype.featureCounts.txt | tail -n +3 | grep -v '^\\s'  > /workdir/featureCounts_output/${pair_id}_biotype_counts_mqc.txt
   """
 }
 
