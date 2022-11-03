@@ -33,7 +33,8 @@ process featurecounts {
     if [[ "${bam}" == "None" ]] ; then bam=\$(ls *.bam | head -n 1 ) ; else bam=${bam} ; fi
     featureCounts -a ${gtf} -T ${task.cpus} -g gene_id -o /workdir/featureCounts_output/${pair_id}_gene.featureCounts.txt ${paired} -s \${strand} \${bam}
     featureCounts -a ${gtf} -T ${task.cpus} -g gene_biotype -o /workdir/featureCounts_output/${pair_id}_biotype.featureCounts.txt ${paired} -s \${strand} \${bam}
-    cut -f 1,7 /workdir/featureCounts_output/${pair_id}_biotype.featureCounts.txt | tail -n +3 | grep -v '^\\s'  > /workdir/featureCounts_output/${pair_id}_biotype_counts_mqc.txt
+    cp biotypes_header.txt ${pair_id}_biotype_counts_mqc.txt
+    cut -f 1,7 /workdir/featureCounts_output/${pair_id}_biotype.featureCounts.txt | tail -n +3 | grep -v '^\\s' >> ${pair_id}_biotype_counts_mqc.txt
   """
 }
 
@@ -108,6 +109,24 @@ workflow {
   }
 
   read_files=Channel.fromFilePairs( "${params.kallisto_raw_data}*.READ_{1,2}.fastq.gz", size: -1 )
+
+  folder=file("${params.project_folder}/featureCounts_output/")
+  if( ! folder.isDirectory() ) {
+    folder.mkdirs()
+  }
+  file=file("${params.project_folder}/featureCounts_output/biotypes_header.txt")
+  headers = """# id: 'biotype-counts'\n\
+# section_name: 'Biotype Counts'\n\
+# description: "shows reads overlapping genomic features of different biotypes,\n\
+#     counted by <a href='http://bioinf.wehi.edu.au/featureCounts'>featureCounts</a>."\n\
+# plot_type: 'bargraph'\n\
+# anchor: 'featurecounts_biotype'\n\
+# pconfig:\n\
+#     id: "featureCounts_biotype_plot"\n\
+#     title: "featureCounts: Biotypes"\n\
+#     xlab: "# Reads"\n\
+#     cpswitch_counts_label: "Number of Reads\n"""
+
   featurecounts(mapping_output, gtf, bam, strand_file, read_files)
   if ( bam != "None" ) {
     featurecounts_headers(bam, featurecounts.out.collect() )
