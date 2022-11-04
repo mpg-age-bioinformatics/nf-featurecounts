@@ -16,7 +16,7 @@ process featurecounts {
     val pair_id
 
   when:
-    ( ! file("/workdir/featureCounts_output/${pair_id}_biotype_counts_mqc.txt").exists() ) 
+    ( ! file("${params.project_folder}/featureCounts_output/${pair_id}_biotype_counts_mqc.txt").exists() ) 
   
   script:
   def single = fastq instanceof Path
