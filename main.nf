@@ -1,6 +1,46 @@
 #!/usr/bin/env nextflow
 nextflow.enable.dsl=2
 
+
+process get_images {
+  stageInMode 'symlink'
+  stageOutMode 'move'
+
+  script:
+    """
+
+    if [[ "${params.run_type}" == "r2d2" ]] || [[ "${params.run_type}" == "raven" ]] ; 
+
+      then
+
+        cd ${params.image_folder}
+
+        if [[ ! -f subread-2.0.3.sif ]] ;
+          then
+            singularity pull subread-2.0.3.sif docker://index.docker.io/mpgagebioinformatics/subread:2.0.3
+        fi
+
+        if [[ ! -f rnaseq.python-3.8-1.sif ]] ;
+          then
+            singularity pull rnaseq.python-3.8-1.sif docker://index.docker.io/mpgagebioinformatics/rnaseq.python:3.8-1
+        fi
+
+    fi
+
+
+    if [[ "${params.run_type}" == "local" ]] ; 
+
+      then
+
+        docker pull mpgagebioinformatics/subread:2.0.3
+        docker pull mpgagebioinformatics/rnaseq.python:3.8-1
+
+    fi
+
+    """
+
+}
+
 process featurecounts {
   stageInMode 'symlink'
   stageOutMode 'move'

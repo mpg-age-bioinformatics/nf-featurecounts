@@ -1,18 +1,20 @@
 # nf-featurecounts
 
-nextflow differential gene expression pipeline
-
-nextflow homepage: [https://www.nextflow.io](https://www.nextflow.io)
-
-nextflow readthedocs: [https://www.nextflow.io/docs/latest/index.html](https://www.nextflow.io/docs/latest/index.html)
-
-MacOS issues might lead to the need for:
+Running the workflow:
 ```
-export JAVA_HOME=$(/usr/libexec/java_home -v 17)
+RELEASE=1.0.0
+PROFILE=local
+nextflow run mpg-age-bioinformatics/nf-featurecounts -r ${RELEASE} -params-file params.json -entry images -profile ${PROFILE} && \
+nextflow run mpg-age-bioinformatics/nf-featurecounts -r ${RELEASE} -params-file params.json -profile ${PROFILE}
 ```
 
-Edit the contents of `project.config` which maps to `nextflow.config` on each respective nextflow (sub)pipe and run:
+## Contributing
 
+Make a commit, check the last tag, add a new one, push it and make a release:
 ```
-nextflow 1_get_genome
+git add -A . && git commit -m "<message>" && git push
+git describe --abbrev=0 --tags
+git tag -e -a <tag> HEAD
+git push origin --tags
+gh release create <tag> 
 ```
