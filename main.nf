@@ -153,7 +153,7 @@ workflow {
     strand_file="/workdir/featureCounts_output/.strandness.txt"
   }
 
-  read_files=Channel.fromFilePairs( "${params.kallisto_raw_data}*.READ_{1,2}.fastq.gz", size: -1 )
+  read_files=Channel.fromFilePairs( "${params.kallisto_raw_data}/*.READ_{1,2}.fastq.gz", size: -1 )
 
   folder=file("${params.project_folder}/featureCounts_output/")
   if( ! folder.isDirectory() ) {
