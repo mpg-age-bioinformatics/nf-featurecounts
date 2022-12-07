@@ -1,0 +1,7 @@
+{ 
+  "project_folder" : "~/nf-kallisto-test" ,
+  "kallisto_raw_data" : "~/nf-kallisto-test/raw_data" ,
+  "genomes" : "~/nf-kallisto-test" ,
+  "organism" : "caenorhabditis_elegans" ,
+  "release" : "107" ,
+}
