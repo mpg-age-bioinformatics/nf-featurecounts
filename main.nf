@@ -123,6 +123,11 @@ process featurecounts_headers {
     """
 }
 
+workflow images {
+  main:
+    get_images()
+}
+
 workflow {
   if ( 'mapping_output' in params.keySet() ) {
     mapping_output=${params.mapping_output}
