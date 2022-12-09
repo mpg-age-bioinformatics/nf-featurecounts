@@ -123,6 +123,7 @@ process featurecounts_headers {
     """
 }
 
+
 workflow images {
   main:
     get_images()
