@@ -41,7 +41,70 @@ process get_images {
 
 }
 
-process featurecounts {
+process exomeBED_to_exomeGTF {
+  stageInMode 'symlink'
+  stageOutMode 'move'
+
+  input:
+    path(bed)
+  
+  when:
+    ( ! file("${params.project_folder}/tmp/target_exons.gtf").exists() )
+
+  script:
+    """
+    mkdir -p /workdir/tmp/
+    awk '{print \$1 "\\tillumina\\texon\\t" \$2 "\\t" \$3 "\\t.\\t.\\t.\\tgene_id \\\"" \$1 "_" \$2 "_" \$3 "\\\";" }' ${bed} > /workdir/tmp/target_exons.gtf
+    """
+}
+
+process featurecounts_general {
+  stageInMode 'symlink'
+  stageOutMode 'move'
+
+  input:
+    val mapping_output
+    val gtf
+    val bam
+    val strand_file
+    tuple val(pair_id), path(fastq)
+
+  output:
+    val pair_id
+
+  when:
+    ( ! file("${params.project_folder}/featureCounts_output/${pair_id}_gene.featureCounts.txt").exists() ) 
+  
+  script:
+  def single = fastq instanceof Path
+
+  if ( single ) {
+    paired=""
+  } else {
+    paired="-p"
+  }
+  """
+    mkdir -p /workdir/featureCounts_output
+
+    if [[ -e "${strand_file}" ]] ; then strand=\$(cat ${strand_file}) ; else strand="0" ; fi
+    echo \${strand}
+
+    if [[ "${mapping_output}" == "kallisto_output" ]]
+    then
+      cd /workdir/${mapping_output}/${pair_id}
+      if [[ "${bam}" == "None" ]] ; then bam=${pair_id}/\$(ls *.bam | head -n 1 ) ; else bam=${pair_id}/${bam} ; fi
+    
+    elif [[ "${mapping_output}" == "bwa_output" ]]
+    then
+      if [[ "${bam}" == "None" ]] ; then bam=${pair_id}.sorted.bam ; else bam=${bam} ; fi
+    fi
+
+    featureCounts -a ${gtf} -T ${task.cpus} -g gene_id -o /workdir/featureCounts_output/${pair_id}_gene.featureCounts.txt ${paired} -s \${strand} /workdir/${mapping_output}/\${bam}
+
+  """
+}
+
+process featurecounts_rnaSeq_specific {
   stageInMode 'symlink'
   stageOutMode 'move'
 
@@ -71,7 +134,6 @@ process featurecounts {
     mkdir -p /workdir/featureCounts_output
     cd /workdir/${mapping_output}/${pair_id}
     if [[ "${bam}" == "None" ]] ; then bam=\$(ls *.bam | head -n 1 ) ; else bam=${bam} ; fi
-    featureCounts -a ${gtf} -T ${task.cpus} -g gene_id -o /workdir/featureCounts_output/${pair_id}_gene.featureCounts.txt ${paired} -s \${strand} \${bam}
     featureCounts -a ${gtf} -T ${task.cpus} -g gene_biotype -o /workdir/featureCounts_output/${pair_id}_biotype.featureCounts.txt ${paired} -s \${strand} \${bam}
     cp /workdir/featureCounts_output/biotypes_header.txt /workdir/featureCounts_output/${pair_id}_biotype_counts_mqc.txt
     cut -f 1,7 /workdir/featureCounts_output/${pair_id}_biotype.featureCounts.txt | tail -n +3 | grep -v '^\\s' >> /workdir/featureCounts_output/${pair_id}_biotype_counts_mqc.txt
@@ -129,27 +191,41 @@ workflow images {
     get_images()
 }
 
+workflow exomeGTF {
+  main:
+  if ( 'exomebed' in params.keySet() ) {
+    bed=params["exomebed"]
+    if ( bed != "none" ) {
+      exomeBED_to_exomeGTF( bed )
+    }
+  }
+}
+
 workflow {
   if ( 'mapping_output' in params.keySet() ) {
-    mapping_output=${params.mapping_output}
+    // mapping_output=${params.mapping_output}
+    mapping_output=params["mapping_output"]
   } else {
     mapping_output="kallisto_output"
   }
 
   if ( 'gtf' in params.keySet() ) {
-    gtf=${params.gtf}
+    // gtf=${params.gtf}
+    gtf=params["gtf"]
   } else {
     gtf="/workdir/kallisto_index/${params.organism}.${params.release}.no.rRNA.gtf"
   }
 
   if ( 'bam' in params.keySet() ) {
-    bam=${params.bam}
+    // bam=${params.bam}
+    bam=params["bam"]
   } else {
     bam="pseudoalignments.bam"
   }
 
   if ( 'strand_file' in params.keySet() ) {
-    strand_file=${params.strand_file}
+    // strand_file=${params.strand_file}
+    strand_file=params["strand_file"]
   } else {
     strand_file="/workdir/featureCounts_output/.strandness.txt"
   }
@@ -160,23 +236,32 @@ workflow {
   if( ! folder.isDirectory() ) {
     folder.mkdirs()
   }
-  file=file("${params.project_folder}/featureCounts_output/biotypes_header.txt")
-  headers = """# id: 'biotype-counts'\n\
-# section_name: 'Biotype Counts'\n\
-# description: "shows reads overlapping genomic features of different biotypes,\n\
-#     counted by <a href='http://bioinf.wehi.edu.au/featureCounts'>featureCounts</a>."\n\
-# plot_type: 'bargraph'\n\
-# anchor: 'featurecounts_biotype'\n\
-# pconfig:\n\
-#     id: "featureCounts_biotype_plot"\n\
-#     title: "featureCounts: Biotypes"\n\
-#     xlab: "# Reads"\n\
-#     cpswitch_counts_label: "Number of Reads\n"""
-  file.text = headers
 
-  featurecounts(mapping_output, gtf, bam, strand_file, read_files)
-  if ( bam != "None" ) {
-    featurecounts_headers(bam, featurecounts.out.collect() )
+  featurecounts_general(mapping_output, gtf, bam, strand_file, read_files)
+
+  if( ! ('model' in params.keySet()) ) {
+  
+    file=file("${params.project_folder}/featureCounts_output/biotypes_header.txt")
+    headers = """# id: 'biotype-counts'\n\
+  # section_name: 'Biotype Counts'\n\
+  # description: "shows reads overlapping genomic features of different biotypes,\n\
+  #     counted by <a href='http://bioinf.wehi.edu.au/featureCounts'>featureCounts</a>."\n\
+  # plot_type: 'bargraph'\n\
+  # anchor: 'featurecounts_biotype'\n\
+  # pconfig:\n\
+  #     id: "featureCounts_biotype_plot"\n\
+  #     title: "featureCounts: Biotypes"\n\
+  #     xlab: "# Reads"\n\
+  #     cpswitch_counts_label: "Number of Reads\n"""
+    file.text = headers
+  
+    featurecounts_rnaSeq_specific(mapping_output, gtf, bam, strand_file, read_files)
+
+  }
+
+  if ( bam == "pseudoalignments.bam" ) {
+    featurecounts_headers(bam, featurecounts_rnaSeq_specific.out.collect() )
   }
 
 }
+
