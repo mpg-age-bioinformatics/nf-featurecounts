@@ -9,7 +9,7 @@ process get_images {
   script:
     """
 
-    if [[ "${params.run_type}" == "r2d2" ]] || [[ "${params.run_type}" == "raven" ]] ; 
+    if [[ "${params.containers}" == "singularity" ]] ; 
 
       then
 
@@ -28,7 +28,7 @@ process get_images {
     fi
 
 
-    if [[ "${params.run_type}" == "local" ]] ; 
+    if [[ "${params.containers}" == "docker" ]] ; 
 
       then
 
