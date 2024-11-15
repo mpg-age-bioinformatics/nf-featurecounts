@@ -243,16 +243,16 @@ workflow {
   
     file=file("${params.project_folder}/featureCounts_output/biotypes_header.txt")
     headers = """# id: 'biotype-counts'\n\
-  # section_name: 'Biotype Counts'\n\
-  # description: "shows reads overlapping genomic features of different biotypes,\n\
-  #     counted by <a href='http://bioinf.wehi.edu.au/featureCounts'>featureCounts</a>."\n\
-  # plot_type: 'bargraph'\n\
-  # anchor: 'featurecounts_biotype'\n\
-  # pconfig:\n\
-  #     id: "featureCounts_biotype_plot"\n\
-  #     title: "featureCounts: Biotypes"\n\
-  #     xlab: "# Reads"\n\
-  #     cpswitch_counts_label: "Number of Reads\n"""
+# section_name: 'Biotype Counts'\n\
+# description: "shows reads overlapping genomic features of different biotypes,\n\
+#     counted by <a href='http://bioinf.wehi.edu.au/featureCounts'>featureCounts</a>."\n\
+# plot_type: 'bargraph'\n\
+# anchor: 'featurecounts_biotype'\n\
+# pconfig:\n\
+#     id: "featureCounts_biotype_plot"\n\
+#     title: "featureCounts: Biotypes"\n\
+#     xlab: "# Reads"\n\
+#     cpswitch_counts_label: "Number of Reads\n"""
     file.text = headers
   
     featurecounts_rnaSeq_specific(mapping_output, gtf, bam, strand_file, read_files)
